@@ -1,5 +1,3 @@
-Markdown
-
 # Validation et Transposition de Grilles de Sudoku (Java)
 
 Programme Java développé dans le cadre d'un cours de programmation (INF 1220, Université TÉLUQ) permettant de charger, valider et transposer des grilles de Sudoku 9×9 à partir de fichiers texte.
@@ -22,8 +20,8 @@ Programme Java développé dans le cadre d'un cours de programmation (INF 1220, 
 │   └── partie1.txt         # Fichiers d'entrée et grilles transposées sauvegardées
 └── README.md               # Documentation du projet.
 
-
-## Consignes pour le test du programme
+> [!NOTE]
+> Consignes pour le test du programme
 
 Le fichier Partie1.txt comprend une suite de triplets valides et le programme peut transposer la matrice correctement.
 
