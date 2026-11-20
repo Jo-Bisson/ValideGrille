@@ -23,7 +23,7 @@ Programme Java développé dans le cadre d'un cours de programmation (INF 1220, 
 └── README.md               # Documentation du projet.
 
 
->## Consignes pour le test du programme
+## Consignes pour le test du programme
 
 Le fichier Partie1.txt comprend une suite de triplets valides et le programme peut transposer la matrice correctement.
 

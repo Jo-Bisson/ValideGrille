@@ -1,5 +1,6 @@
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -8,9 +9,6 @@ import java.util.Scanner;
 import java.util.Set;
 
 public class ValideGrille {
-
-    // Dossier contenant les fichiers textes
-    private static final String DOSSIER_DATA = "data";
 
     // Exception interne pour éviter tout conflit de nom
     public static class GrilleInvalideException extends Exception {
@@ -24,40 +22,49 @@ public class ValideGrille {
         Scanner clavier = new Scanner(System.in);
 
         // 1. DEMANDE DU NOM DU FICHIER SOURCE
-        System.out.print("Entrez le nom du fichier texte contenant la grille initiale (ex: grille.txt) : ");
+        System.out.print("Entrez le nom du fichier texte contenant la grille initiale (ex: Partie1.txt) : ");
         String nomFichierSource = clavier.nextLine().trim();
         
         if (!nomFichierSource.toLowerCase().endsWith(".txt")) {
             nomFichierSource += ".txt";
         }
 
-        // Recherche dans le sous-répertoire data/
-        File fichierSource = new File(DOSSIER_DATA, nomFichierSource);
+        // Recherche dans le Classpath (/data/nomFichier.txt -> situé dans src/data/)
+        String cheminRessource = "/data/" + nomFichierSource;
+        InputStream fluxSource = ValideGrille.class.getResourceAsStream(cheminRessource);
 
         // 2. LECTURE ET VÉRIFICATION DES VALEURS INDIVIDUELLES
-        try (Scanner fileScanner = new Scanner(fichierSource)) {
-            while (fileScanner.hasNext()) {
-                String triplet = fileScanner.next();
-                if (triplet.length() == 3) {
-                    int ligne = Character.getNumericValue(triplet.charAt(0));
-                    int colonne = Character.getNumericValue(triplet.charAt(1));
-                    int valeur = Character.getNumericValue(triplet.charAt(2));
+        try {
+            if (fluxSource == null) {
+                throw new FileNotFoundException(
+                    "La ressource '" + cheminRessource + "' est introuvable dans src/data/ (attention aux majuscules/minuscules)."
+                );
+            }
 
-                    if (ligne < 0 || ligne > 8 || colonne < 0 || colonne > 8) {
-                        throw new GrilleInvalideException(
-                            String.format("Indices hors limites dans le triplet '%s'. Les coordonnées doivent être entre 0 et 8.", triplet)
-                        );
+            try (Scanner fileScanner = new Scanner(fluxSource)) {
+                while (fileScanner.hasNext()) {
+                    String triplet = fileScanner.next();
+                    if (triplet.length() == 3) {
+                        int ligne = Character.getNumericValue(triplet.charAt(0));
+                        int colonne = Character.getNumericValue(triplet.charAt(1));
+                        int valeur = Character.getNumericValue(triplet.charAt(2));
+
+                        if (ligne < 0 || ligne > 8 || colonne < 0 || colonne > 8) {
+                            throw new GrilleInvalideException(
+                                String.format("Indices hors limites dans le triplet '%s'. Les coordonnées doivent être entre 0 et 8.", triplet)
+                            );
+                        }
+
+                        if (valeur < 1 || valeur > 9) {
+                            throw new GrilleInvalideException(
+                                String.format("Valeur incorrecte dans le triplet '%s'. Le chiffre doit être compris entre 1 et 9.", triplet)
+                            );
+                        }
+
+                        grille[ligne][colonne] = valeur;
+                    } else {
+                        throw new GrilleInvalideException("Format de triplet invalide détecté : '" + triplet + "'. Attendu : 3 chiffres.");
                     }
-
-                    if (valeur < 1 || valeur > 9) {
-                        throw new GrilleInvalideException(
-                            String.format("Valeur incorrecte dans le triplet '%s'. Le chiffre doit être compris entre 1 et 9.", triplet)
-                        );
-                    }
-
-                    grille[ligne][colonne] = valeur;
-                } else {
-                    throw new GrilleInvalideException("Format de triplet invalide détecté : '" + triplet + "'. Attendu : 3 chiffres.");
                 }
             }
             
@@ -77,7 +84,7 @@ public class ValideGrille {
             proposerSauvegarde(clavier, grille);
 
         } catch (FileNotFoundException e) {
-            System.err.println("Erreur : Le fichier '" + fichierSource.getPath() + "' est introuvable. Vérifiez son emplacement.");
+            System.err.println("Erreur : " + e.getMessage());
         } catch (GrilleInvalideException e) {
             System.err.println("\n🛑 Erreur de validation : " + e.getMessage());
         } finally {
@@ -86,7 +93,7 @@ public class ValideGrille {
     }
 
     public static void validerGrille(int[][] grille) throws GrilleInvalideException {
-        // Vérification des Lignes
+        // Vérification des Lignes (numérotées de 1 à 9 à l'affichage)
         for (int i = 0; i < 9; i++) {
             Set<Integer> vus = new HashSet<>();
             List<Integer> doublons = new ArrayList<>();
@@ -113,7 +120,7 @@ public class ValideGrille {
             }
         }
 
-        // Vérification des Colonnes
+        // Vérification des Colonnes (numérotées de 1 à 9 à l'affichage)
         for (int j = 0; j < 9; j++) {
             Set<Integer> vus = new HashSet<>();
             List<Integer> doublons = new ArrayList<>();
@@ -162,12 +169,11 @@ public class ValideGrille {
                 nomFichierCible += ".txt";
             }
 
-            File dossierData = new File(DOSSIER_DATA);
-            if (!dossierData.exists()) {
-                dossierData.mkdirs();
-            }
-
-            File fichierCible = new File(dossierData, nomFichierCible);
+            // Enregistre dans src/data/ si le dossier existe, sinon dans le répertoire courant
+            File dossierSrcData = new File("src/data");
+            File fichierCible = dossierSrcData.isDirectory() 
+                ? new File(dossierSrcData, nomFichierCible) 
+                : new File(nomFichierCible);
 
             try (PrintWriter writer = new PrintWriter(fichierCible)) {
                 for (int i = 0; i < 9; i++) {
@@ -176,9 +182,9 @@ public class ValideGrille {
                     }
                     writer.println();
                 }
-                System.out.println("La grille transposée a été sauvegardée avec succès dans : " + fichierCible.getPath());
+                System.out.println("La grille transposée a été sauvegardée avec succès dans : " + fichierCible.getAbsolutePath());
             } catch (FileNotFoundException e) {
-                System.err.println("Erreur impossible de créer ou d'écrire dans le fichier : " + fichierCible.getPath());
+                System.err.println("Erreur impossible de créer ou d'écrire dans le fichier : " + fichierCible.getAbsolutePath());
             }
         } else {
             System.out.println("Sauvegarde annulée.");
